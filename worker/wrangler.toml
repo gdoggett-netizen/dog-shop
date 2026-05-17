@@ -1,0 +1,8 @@
+name = "dog-shop-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dog-shop"
+database_id = "3db2d992-695c-4ed2-961d-1abce22dc4c6"
