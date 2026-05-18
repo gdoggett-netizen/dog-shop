@@ -2,6 +2,10 @@ name = "dog-shop-api"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
+[vars]
+VAPID_SUBJECT = "mailto:gdoggett@gmail.com"
+VAPID_PUBLIC_KEY = "BApWWtkmLw-40xvXEpRZGdFR9De6O3I-CGyofmH6NqR46tjAPLURv9suS9xhE-ZEBXf-dWSr-IVEgu-ZfALadQw"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "dog-shop"

@@ -433,6 +433,7 @@
       <span class="logo-text">Dog Shop</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
+      <button class="icon-btn" id="notif-btn" aria-label="Enable notifications" style="display:none;">🔔</button>
       <div class="sync-dot" id="sync-dot"></div>
       <span class="item-count" id="item-count">0 items</span>
     </div>
@@ -474,6 +475,7 @@
 
   <script>
     const API = "https://dog-shop-api.gdoggett.workers.dev";
+    const VAPID_PUBLIC_KEY = "BApWWtkmLw-40xvXEpRZGdFR9De6O3I-CGyofmH6NqR46tjAPLURv9suS9xhE-ZEBXf-dWSr-IVEgu-ZfALadQw";
     let items = [];
     let activeTab = "all";
     let pollTimer = null;
@@ -597,10 +599,11 @@
       inputEl.value = "";
       setSyncing();
       try {
+        const senderEndpoint = localStorage.getItem("pushEndpoint") || null;
         const res = await fetch(`${API}/api/items`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ name, senderEndpoint }),
         });
         if (!res.ok) throw new Error();
         const item = await res.json();
@@ -708,12 +711,62 @@
       }
     });
 
+    // ─── Notifications ───────────────────────────────────────────────────────
+    const notifBtn = document.getElementById("notif-btn");
+
+    function urlB64ToUint8Array(b64) {
+      const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+      const raw = atob(b64.replace(/-/g, "+").replace(/_/g, "/") + pad);
+      return Uint8Array.from(raw, c => c.charCodeAt(0));
+    }
+
+    async function subscribe() {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+        const { endpoint, keys: { p256dh, auth } } = sub.toJSON();
+        await fetch(`${API}/api/subscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint, p256dh, auth }),
+        });
+        localStorage.setItem("pushEndpoint", endpoint);
+        notifBtn.textContent = "🔕";
+        notifBtn.title = "Notifications on";
+        showToast("Notifications on");
+      } catch {
+        showToast("Couldn't enable notifications");
+      }
+    }
+
+    function initNotifButton() {
+      if (!("Notification" in window) || !("PushManager" in window)) return;
+      if (Notification.permission === "denied") return;
+      const stored = localStorage.getItem("pushEndpoint");
+      if (stored) {
+        notifBtn.textContent = "🔕";
+        notifBtn.title = "Notifications on";
+      }
+      notifBtn.style.display = "";
+      notifBtn.addEventListener("click", async () => {
+        const stored = localStorage.getItem("pushEndpoint");
+        if (stored) { showToast("Notifications already on"); return; }
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") { showToast("Notifications blocked"); return; }
+        await subscribe();
+      });
+    }
+
     // Service worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js");
     }
 
     // Init
+    initNotifButton();
     loadItems();
     startPolling();
   </script>
