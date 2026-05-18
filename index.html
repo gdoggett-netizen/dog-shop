@@ -48,6 +48,7 @@
       flex-direction: column;
       min-height: 100dvh;
       padding-top: var(--safe-top);
+      background: radial-gradient(ellipse 100% 45% at 50% -5%, rgba(124,106,247,0.18) 0%, transparent 65%);
     }
 
     /* Header */
@@ -75,6 +76,7 @@
       justify-content: center;
       font-size: 18px;
       flex-shrink: 0;
+      box-shadow: 0 0 18px rgba(124,106,247,0.55);
     }
 
     .logo-text {
@@ -149,6 +151,8 @@
     }
 
     .add-btn:active { transform: scale(0.92); opacity: 0.85; }
+    .add-form:focus-within .add-btn { box-shadow: 0 0 14px rgba(124,106,247,0.65); }
+    .check-btn:active { transform: scale(0.75); }
 
     /* Tabs */
     .tabs {
@@ -175,9 +179,10 @@
     }
 
     .tab.active {
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent), #9a8af9);
       border-color: var(--accent);
       color: white;
+      box-shadow: 0 2px 12px var(--accent-glow);
     }
 
     /* List */
@@ -206,6 +211,11 @@
       transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
       animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+
+    .item:not(.checked) {
+      box-shadow: inset 3px 0 0 var(--accent), 0 2px 12px rgba(0,0,0,0.25);
     }
 
     @keyframes slideIn {
@@ -246,6 +256,7 @@
       border-color: var(--success);
       color: #0a0a0f;
       font-size: 13px;
+      box-shadow: 0 0 10px rgba(106,247,160,0.5);
     }
 
     .item-name {
@@ -315,7 +326,7 @@
 
     .shop-btn {
       flex: 1;
-      background: var(--walmart);
+      background: linear-gradient(135deg, var(--walmart), #0d8ce8);
       color: white;
       border: none;
       border-radius: var(--radius);
@@ -327,9 +338,10 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      transition: opacity 0.15s, transform 0.1s;
+      transition: opacity 0.15s, transform 0.1s, box-shadow 0.2s;
       -webkit-tap-highlight-color: transparent;
       letter-spacing: 0.2px;
+      box-shadow: 0 4px 20px rgba(0,113,206,0.45);
     }
 
     .shop-btn:active { opacity: 0.85; transform: scale(0.98); }
@@ -598,6 +610,7 @@
         render();
         setSynced();
         showToast(`"${name}" added`);
+        if ("vibrate" in navigator) navigator.vibrate(15);
       } catch {
         setSyncError();
         showToast("Couldn't add item — check connection");
@@ -610,6 +623,7 @@
       const item = items.find(i => i.id === id);
       if (!item) return;
       item.checked = !item.checked;
+      if ("vibrate" in navigator) navigator.vibrate(25);
       render();
       setSyncing();
       try {
