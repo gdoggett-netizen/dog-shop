@@ -433,7 +433,7 @@
       <span class="logo-text">Dog Shop</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <button class="icon-btn" id="notif-btn" aria-label="Enable notifications" style="display:none;">🔔</button>
+      <button class="icon-btn" id="notif-btn" aria-label="Enable notifications">🔔</button>
       <div class="sync-dot" id="sync-dot"></div>
       <span class="item-count" id="item-count">0 items</span>
     </div>
@@ -743,15 +743,16 @@
     }
 
     function initNotifButton() {
-      if (!("Notification" in window) || !("PushManager" in window)) return;
-      if (Notification.permission === "denied") return;
       const stored = localStorage.getItem("pushEndpoint");
       if (stored) {
         notifBtn.textContent = "🔕";
         notifBtn.title = "Notifications on";
       }
-      notifBtn.style.display = "";
       notifBtn.addEventListener("click", async () => {
+        if (!("Notification" in window) || !("PushManager" in window)) {
+          showToast("Notifications not supported on this device");
+          return;
+        }
         const stored = localStorage.getItem("pushEndpoint");
         if (stored) { showToast("Notifications already on"); return; }
         const perm = await Notification.requestPermission();
