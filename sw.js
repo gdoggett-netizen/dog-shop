@@ -1,4 +1,4 @@
-const CACHE = "dog-shop-v1";
+const CACHE = "dog-shop-v2";
 const SHELL = ["/", "/index.html", "/manifest.json", "/sw.js"];
 
 self.addEventListener("install", e => {
