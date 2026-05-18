@@ -95,8 +95,8 @@ async function encryptForPush(payloadStr, p256dh, auth) {
 
   // RFC 8188: derive CEK and nonce from random salt
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  const cek = await hkdf(salt, ikm, enc.encode("Content-Encoding: aes128gcm\x00\x01"), 16);
-  const nonce = await hkdf(salt, ikm, enc.encode("Content-Encoding: nonce\x00\x01"), 12);
+  const cek = await hkdf(salt, ikm, enc.encode("Content-Encoding: aes128gcm\x00"), 16);
+  const nonce = await hkdf(salt, ikm, enc.encode("Content-Encoding: nonce\x00"), 12);
 
   const padded = concat(enc.encode(payloadStr), new Uint8Array([2])); // 0x02 = last-record delimiter
   const cekKey = await crypto.subtle.importKey("raw", cek, { name: "AES-GCM" }, false, ["encrypt"]);
@@ -116,31 +116,35 @@ async function encryptForPush(payloadStr, p256dh, auth) {
 
 async function sendPushes(env, title, body, senderEndpoint) {
   const { results: subs } = await env.DB.prepare("SELECT * FROM subscriptions").all();
+  console.log(`[push] ${subs.length} subscriptions in DB, senderEndpoint=${senderEndpoint ? senderEndpoint.slice(0,40) : "none"}`);
   if (!subs.length) return;
 
+  const targets = subs.filter(s => s.endpoint !== senderEndpoint);
+  console.log(`[push] sending to ${targets.length} targets`);
+
   await Promise.allSettled(
-    subs
-      .filter(s => s.endpoint !== senderEndpoint)
-      .map(async sub => {
-        try {
-          const jwt = await makeVapidJwt(sub.endpoint, env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY, env.VAPID_SUBJECT);
-          const encrypted = await encryptForPush(JSON.stringify({ title, body }), sub.p256dh, sub.auth);
-          const res = await fetch(sub.endpoint, {
-            method: "POST",
-            headers: {
-              Authorization: `vapid t=${jwt},k=${env.VAPID_PUBLIC_KEY}`,
-              "Content-Type": "application/octet-stream",
-              "Content-Encoding": "aes128gcm",
-              TTL: "86400",
-            },
-            body: encrypted,
-          });
-          // Clean up expired subscriptions
-          if (res.status === 404 || res.status === 410) {
-            await env.DB.prepare("DELETE FROM subscriptions WHERE endpoint = ?").bind(sub.endpoint).run();
-          }
-        } catch (_) { /* best-effort */ }
-      })
+    targets.map(async sub => {
+      try {
+        const jwt = await makeVapidJwt(sub.endpoint, env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY, env.VAPID_SUBJECT);
+        const encrypted = await encryptForPush(JSON.stringify({ title, body }), sub.p256dh, sub.auth);
+        const res = await fetch(sub.endpoint, {
+          method: "POST",
+          headers: {
+            Authorization: `vapid t=${jwt},k=${env.VAPID_PUBLIC_KEY}`,
+            "Content-Type": "application/octet-stream",
+            "Content-Encoding": "aes128gcm",
+            TTL: "86400",
+          },
+          body: encrypted,
+        });
+        console.log(`[push] response ${res.status} for ${sub.endpoint.slice(0,40)}`);
+        if (res.status === 404 || res.status === 410) {
+          await env.DB.prepare("DELETE FROM subscriptions WHERE endpoint = ?").bind(sub.endpoint).run();
+        }
+      } catch (err) {
+        console.log(`[push] error: ${err.message}`);
+      }
+    })
   );
 }
 
