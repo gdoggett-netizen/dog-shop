@@ -162,7 +162,9 @@ export default {
     // GET /api/items
     if (path === "/api/items" && request.method === "GET") {
       const { results } = await env.DB.prepare(
-        "SELECT * FROM items ORDER BY created_at ASC"
+        `SELECT items.*,
+          (SELECT COUNT(*) FROM comments WHERE item_id = items.id) AS comment_count
+         FROM items ORDER BY items.created_at ASC`
       ).all();
       return json(results);
     }
@@ -205,6 +207,33 @@ export default {
       return json({ ok: true });
     }
 
+    // GET + POST /api/items/:id/comments
+    const commentsMatch = path.match(/^\/api\/items\/([^/]+)\/comments$/);
+    if (commentsMatch && request.method === "GET") {
+      const id = commentsMatch[1];
+      const { results } = await env.DB.prepare(
+        "SELECT * FROM comments WHERE item_id = ? ORDER BY created_at ASC"
+      ).bind(id).all();
+      return json(results);
+    }
+    if (commentsMatch && request.method === "POST") {
+      const id = commentsMatch[1];
+      const { text, senderEndpoint } = await request.json();
+      if (!text || !text.trim()) return json({ error: "Text required" }, 400);
+      const commentId = crypto.randomUUID();
+      const now = new Date().toISOString();
+      await env.DB.prepare(
+        "INSERT INTO comments (id, item_id, text, created_at) VALUES (?, ?, ?, ?)"
+      ).bind(commentId, id, text.trim(), now).run();
+      const item = await env.DB.prepare("SELECT name FROM items WHERE id = ?").bind(id).first();
+      if (item && env.VAPID_PRIVATE_KEY && env.VAPID_PRIVATE_KEY !== "REPLACE_WITH_VAPID_PRIVATE_KEY") {
+        ctx.waitUntil(
+          sendPushes(env, "Dog Shop 💬", `"${item.name}": ${text.trim()}`, senderEndpoint)
+        );
+      }
+      return json({ id: commentId, item_id: id, text: text.trim(), created_at: now }, 201);
+    }
+
     // PATCH /api/items/:id/qty
     const qtyMatch = path.match(/^\/api\/items\/([^/]+)\/qty$/);
     if (qtyMatch && request.method === "PATCH") {
@@ -238,6 +267,7 @@ export default {
     const deleteMatch = path.match(/^\/api\/items\/([^/]+)$/);
     if (deleteMatch && request.method === "DELETE") {
       const id = deleteMatch[1];
+      await env.DB.prepare("DELETE FROM comments WHERE item_id = ?").bind(id).run();
       await env.DB.prepare("DELETE FROM items WHERE id = ?").bind(id).run();
       return json({ ok: true });
     }
