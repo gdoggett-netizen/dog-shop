@@ -446,46 +446,6 @@
 
     .clear-btn:active { opacity: 0.65; }
 
-    /* Change popup */
-    .change-popup {
-      position: fixed;
-      top: calc(var(--safe-top) + 12px);
-      left: 16px;
-      right: 16px;
-      background: var(--surface2);
-      border: 1px solid var(--accent);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px var(--accent-glow);
-      z-index: 200;
-      transform: translateY(-120%);
-      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .change-popup.show { transform: translateY(0); }
-
-    .change-popup-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 6px;
-      letter-spacing: 0.3px;
-    }
-
-    .change-popup-items {
-      font-size: 15px;
-      color: var(--text);
-      line-height: 1.5;
-    }
-
-    .change-popup-dismiss {
-      margin-top: 10px;
-      font-size: 12px;
-      color: var(--text-dim);
-      text-align: right;
-      cursor: pointer;
-    }
-
     /* Toast */
     .toast {
       position: fixed;
@@ -595,11 +555,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <div class="change-popup" id="change-popup">
-    <div class="change-popup-title">✨ Added while you were away</div>
-    <div class="change-popup-items" id="change-popup-items"></div>
-    <div class="change-popup-dismiss" id="change-popup-dismiss">tap to dismiss</div>
-  </div>
 
   <script>
     const API = "https://dog-shop-api.gdoggett.workers.dev";
@@ -633,7 +588,7 @@
     function setSyncError() { syncDot.className = "sync-dot error"; }
 
     // Fetch items
-    async function loadItems(silent = false, checkChanges = false) {
+    async function loadItems(silent = false) {
       if (silent && document.querySelector(".note-input")) return; // don't interrupt note editing
       if (!silent) setSyncing();
       try {
@@ -643,7 +598,6 @@
         items = data;
         render();
         setSynced();
-        if (checkChanges) checkForChanges(data);
       } catch {
         setSyncError();
       }
@@ -917,39 +871,10 @@
       if (document.hidden) {
         clearInterval(pollTimer);
       } else {
-        loadItems(true, true); // check for changes when returning to app
+        loadItems(true);
         startPolling();
       }
     });
-
-    // ─── Change popup ────────────────────────────────────────────────────────
-    const changePopup = document.getElementById("change-popup");
-    const changePopupItems = document.getElementById("change-popup-items");
-    const changePopupDismiss = document.getElementById("change-popup-dismiss");
-    let popupTimer = null;
-
-    function showChangePopup(newItems) {
-      if (!newItems.length) return;
-      changePopupItems.textContent = newItems.map(i => i.name).join(" · ");
-      changePopup.classList.add("show");
-      clearTimeout(popupTimer);
-      popupTimer = setTimeout(hideChangePopup, 5000);
-    }
-
-    function hideChangePopup() {
-      changePopup.classList.remove("show");
-    }
-
-    changePopupDismiss.addEventListener("click", hideChangePopup);
-
-    function checkForChanges(freshItems) {
-      const lastSeen = localStorage.getItem("lastSeenAt");
-      const now = new Date().toISOString();
-      localStorage.setItem("lastSeenAt", now);
-      if (!lastSeen) return; // first visit, nothing to compare
-      const newItems = freshItems.filter(i => !i.checked && i.created_at > lastSeen);
-      showChangePopup(newItems);
-    }
 
     // ─── Notifications ───────────────────────────────────────────────────────
     const notifBtn = document.getElementById("notif-btn");
@@ -1008,7 +933,7 @@
 
     // Init
     initNotifButton();
-    loadItems(false, true); // check for changes on first load too
+    loadItems();
     startPolling();
   </script>
 </body>
