@@ -274,6 +274,52 @@
       transition: color 0.2s;
     }
 
+    .name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .qty-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid rgba(124,106,247,0.3);
+      border-radius: 6px;
+      padding: 1px 7px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .qty-placeholder {
+      font-size: 11px;
+      color: var(--text-dim);
+      opacity: 0.3;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .qty-input {
+      width: 52px;
+      background: none;
+      border: none;
+      border-bottom: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      outline: none;
+      padding: 1px 2px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .item.checked .qty-badge,
+    .item.checked .qty-placeholder { opacity: 0.4; pointer-events: none; }
+
     .item-note {
       font-size: 13px;
       color: var(--text-dim);
@@ -613,13 +659,19 @@
       const noteHtml = item.note
         ? `<span class="item-note">${escHtml(item.note)}</span>`
         : `<span class="note-placeholder">+ note</span>`;
+      const qtyHtml = item.qty
+        ? `<span class="qty-badge">${escHtml(item.qty)}</span>`
+        : `<span class="qty-placeholder">qty</span>`;
 
       el.innerHTML = `
         <button class="check-btn" aria-label="Toggle checked">
           ${item.checked ? "✓" : ""}
         </button>
         <div class="item-body">
-          <span class="item-name">${escHtml(item.name)}</span>
+          <div class="name-row">
+            <div class="qty-area">${qtyHtml}</div>
+            <span class="item-name">${escHtml(item.name)}</span>
+          </div>
           <div class="note-area">${noteHtml}</div>
         </div>
         <div class="item-actions">
@@ -630,7 +682,42 @@
       el.querySelector(".check-btn").addEventListener("click", () => toggleCheck(item.id));
       el.querySelector(".delete").addEventListener("click", () => deleteItem(item.id, el));
       el.querySelector(".note-area").addEventListener("click", () => openNoteInput(item, el));
+      el.querySelector(".qty-area").addEventListener("click", () => openQtyInput(item, el));
       return el;
+    }
+
+    function openQtyInput(item, el) {
+      const area = el.querySelector(".qty-area");
+      if (area.querySelector(".qty-input")) return;
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "qty-input";
+      input.placeholder = "qty";
+      input.value = item.qty || "";
+      input.setAttribute("enterkeyhint", "done");
+      area.innerHTML = "";
+      area.appendChild(input);
+      input.focus();
+      input.select();
+
+      const save = async () => {
+        const qty = input.value.trim();
+        item.qty = qty || null;
+        area.innerHTML = qty
+          ? `<span class="qty-badge">${escHtml(qty)}</span>`
+          : `<span class="qty-placeholder">qty</span>`;
+        try {
+          await fetch(`${API}/api/items/${item.id}/qty`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ qty: qty || null }),
+          });
+        } catch { /* best effort */ }
+      };
+
+      input.addEventListener("blur", save);
+      input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); input.blur(); } });
     }
 
     function openNoteInput(item, el) {

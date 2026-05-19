@@ -205,6 +205,15 @@ export default {
       return json({ ok: true });
     }
 
+    // PATCH /api/items/:id/qty
+    const qtyMatch = path.match(/^\/api\/items\/([^/]+)\/qty$/);
+    if (qtyMatch && request.method === "PATCH") {
+      const id = qtyMatch[1];
+      const { qty } = await request.json();
+      await env.DB.prepare("UPDATE items SET qty = ? WHERE id = ?").bind(qty || null, id).run();
+      return json({ ok: true });
+    }
+
     // PATCH /api/items/:id/note
     const noteMatch = path.match(/^\/api\/items\/([^/]+)\/note$/);
     if (noteMatch && request.method === "PATCH") {
