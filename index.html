@@ -546,6 +546,50 @@
 
     .clear-btn:active { opacity: 0.65; }
 
+    /* What's new banner */
+    .whats-new {
+      position: fixed;
+      top: calc(var(--safe-top) + 10px);
+      left: 16px;
+      right: 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 200;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+    }
+
+    .whats-new.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .whats-new-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .whats-new-names {
+      font-size: 13px;
+      color: var(--text);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     /* Toast */
     .toast {
       position: fixed;
@@ -763,6 +807,10 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <div class="whats-new" id="whats-new">
+    <span class="whats-new-label">✨ Added</span>
+    <span class="whats-new-names" id="whats-new-names"></span>
+  </div>
 
   <script>
     const API = "https://dog-shop-api.gdoggett.workers.dev";
@@ -1303,6 +1351,29 @@
       }
     });
 
+    // ─── What's new banner ────────────────────────────────────────────────────
+    const WHATS_NEW = {
+      version: "2026-05-21-history",
+      message: "New: History tab — see what you've bought, grouped by day",
+    };
+
+    const whatsNewEl = document.getElementById("whats-new");
+    const whatsNewNames = document.getElementById("whats-new-names");
+    let whatsNewTimer = null;
+
+    function checkWhatsNew() {
+      if (localStorage.getItem("whatsNewSeen") === WHATS_NEW.version) return;
+      whatsNewNames.textContent = WHATS_NEW.message;
+      whatsNewEl.classList.add("show");
+      whatsNewTimer = setTimeout(() => whatsNewEl.classList.remove("show"), 6000);
+    }
+
+    whatsNewEl.addEventListener("click", () => {
+      clearTimeout(whatsNewTimer);
+      whatsNewEl.classList.remove("show");
+      localStorage.setItem("whatsNewSeen", WHATS_NEW.version);
+    });
+
     // ─── Notifications ───────────────────────────────────────────────────────
     const notifBtn = document.getElementById("notif-btn");
 
@@ -1362,6 +1433,7 @@
     initNotifButton();
     loadItems();
     startPolling();
+    checkWhatsNew();
   </script>
 </body>
 </html>
