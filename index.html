@@ -606,6 +606,113 @@
       height: 1px;
       background: var(--border);
     }
+
+    /* History tab */
+    .history-day-header {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-dim);
+      padding: 14px 0 6px;
+    }
+
+    .history-day-header:first-child { padding-top: 4px; }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+    }
+
+    .history-item-check {
+      font-size: 13px;
+      color: var(--success);
+      flex-shrink: 0;
+    }
+
+    .history-item-name {
+      font-size: 15px;
+      color: var(--checked-text);
+      text-decoration: line-through;
+      text-decoration-color: var(--checked-text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .suggestions-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 0 8px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .suggestions-header::before, .suggestions-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(124,106,247,0.25);
+    }
+
+    .history-suggestion {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid rgba(124,106,247,0.2);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+    }
+
+    .suggestion-name {
+      flex: 1;
+      font-size: 15px;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .suggestion-count {
+      font-size: 12px;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .suggestion-add-btn {
+      background: var(--accent-glow);
+      border: 1px solid rgba(124,106,247,0.4);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 20px;
+      padding: 5px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      font-family: inherit;
+    }
+
+    .suggestion-add-btn:active { opacity: 0.7; transform: scale(0.95); }
+    .suggestion-add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .suggestion-on-list {
+      font-size: 12px;
+      color: var(--success);
+      font-weight: 600;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -641,6 +748,7 @@
     <button class="tab active" data-tab="all">All</button>
     <button class="tab" data-tab="active">Need</button>
     <button class="tab" data-tab="checked">Got</button>
+    <button class="tab" data-tab="history">History</button>
   </div>
 
   <div class="list-wrapper">
@@ -705,6 +813,7 @@
 
     // Render list
     function render() {
+      if (activeTab === "history") return;
       const unchecked = items.filter(i => !i.checked);
       const checked   = items.filter(i => i.checked);
 
@@ -1038,13 +1147,139 @@
       window.open(`https://www.walmart.com/search?q=${encodeURIComponent(query)}`, "_blank");
     }
 
+    // ─── History ─────────────────────────────────────────────────────────────
+
+    let historyData = null;
+
+    async function loadHistory() {
+      listEl.innerHTML = `<div class="empty"><div class="empty-icon">⏳</div><div class="empty-title">Loading history…</div></div>`;
+      try {
+        const res = await fetch(`${API}/api/history`);
+        historyData = await res.json();
+        renderHistory();
+      } catch {
+        listEl.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">Couldn't load history</div></div>`;
+      }
+    }
+
+    function formatDay(dateStr) {
+      const date = new Date(dateStr + "T00:00:00");
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const diff = Math.round((today - date) / 86400000);
+      if (diff === 0) return "Today";
+      if (diff === 1) return "Yesterday";
+      return date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+    }
+
+    function renderHistory() {
+      listEl.innerHTML = "";
+      const { removed = [], recommendations = [] } = historyData || {};
+
+      const byDay = {};
+      removed.forEach(r => {
+        const day = r.removed_at.slice(0, 10);
+        if (!byDay[day]) byDay[day] = [];
+        byDay[day].push(r);
+      });
+      const days = Object.keys(byDay).sort().reverse();
+
+      if (days.length === 0 && recommendations.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">No history yet</div>
+            <div class="empty-sub">Items you check off and clear will appear here. Suggestions show up once patterns emerge.</div>
+          </div>`;
+        return;
+      }
+
+      days.forEach(day => {
+        const header = document.createElement("div");
+        header.className = "history-day-header";
+        header.textContent = formatDay(day);
+        listEl.appendChild(header);
+
+        byDay[day].forEach(r => {
+          const el = document.createElement("div");
+          el.className = "history-item";
+          const qtyHtml = r.qty ? ` <span class="qty-badge">${escHtml(r.qty)}</span>` : "";
+          el.innerHTML = `
+            <span class="history-item-check">✓</span>
+            <span class="history-item-name">${escHtml(r.name)}${qtyHtml}</span>`;
+          listEl.appendChild(el);
+        });
+      });
+
+      if (recommendations.length > 0) {
+        const hdr = document.createElement("div");
+        hdr.className = "suggestions-header";
+        hdr.innerHTML = `<span>Suggested — bought regularly</span>`;
+        listEl.appendChild(hdr);
+
+        recommendations.forEach(rec => {
+          const alreadyOnList = items.some(
+            i => i.name.toLowerCase().trim() === rec.name.toLowerCase().trim()
+          );
+          const el = document.createElement("div");
+          el.className = "history-suggestion";
+          el.innerHTML = `
+            <span class="suggestion-name">${escHtml(rec.name)}</span>
+            <span class="suggestion-count">${rec.removals}× in 90 days</span>
+            ${alreadyOnList
+              ? `<span class="suggestion-on-list">On list</span>`
+              : `<button class="suggestion-add-btn">+ Add</button>`}`;
+          if (!alreadyOnList) {
+            el.querySelector(".suggestion-add-btn").addEventListener("click", () =>
+              addFromSuggestion(rec.name, el)
+            );
+          }
+          listEl.appendChild(el);
+        });
+      }
+    }
+
+    async function addFromSuggestion(name, el) {
+      const btn = el.querySelector(".suggestion-add-btn");
+      btn.disabled = true;
+      btn.textContent = "Adding…";
+      const senderEndpoint = localStorage.getItem("pushEndpoint") || null;
+      try {
+        const res = await fetch(`${API}/api/items`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, senderEndpoint }),
+        });
+        if (!res.ok) throw new Error();
+        const item = await res.json();
+        items.push(item);
+        btn.textContent = "✓ Added";
+        btn.style.background = "rgba(106,247,160,0.15)";
+        btn.style.borderColor = "rgba(106,247,160,0.4)";
+        btn.style.color = "var(--success)";
+        showToast(`"${name}" added to list`);
+        if ("vibrate" in navigator) navigator.vibrate(15);
+      } catch {
+        btn.disabled = false;
+        btn.textContent = "+ Add";
+        showToast("Couldn't add — check connection");
+      }
+    }
+
     // Tabs
     document.querySelectorAll(".tab").forEach(tab => {
       tab.addEventListener("click", () => {
         document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
         activeTab = tab.dataset.tab;
-        render();
+        const footer = document.querySelector(".footer");
+        if (activeTab === "history") {
+          footer.style.display = "none";
+          loadHistory();
+        } else {
+          footer.style.display = "";
+          render();
+        }
       });
     });
 
