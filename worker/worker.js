@@ -11,6 +11,10 @@ function json(data, status = 200) {
   });
 }
 
+function normalizeItemName(name) {
+  return name.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 // ─── Web Push helpers ────────────────────────────────────────────────────────
 
 function b64uDecode(str) {
@@ -148,6 +152,27 @@ async function sendPushes(env, title, body, senderEndpoint) {
   );
 }
 
+async function archiveRemovedItem(env, item, reason = "removed") {
+  const removedId = crypto.randomUUID();
+  const removedAt = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO removed_items
+      (id, item_id, name, normalized_name, note, qty, was_checked, removed_reason, created_at, removed_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    removedId,
+    item.id,
+    item.name,
+    normalizeItemName(item.name),
+    item.note || null,
+    item.qty || null,
+    item.checked ? 1 : 0,
+    reason,
+    item.created_at || null,
+    removedAt
+  ).run();
+}
+
 // ─── Request handler ─────────────────────────────────────────────────────────
 
 export default {
@@ -167,6 +192,46 @@ export default {
          FROM items ORDER BY items.created_at ASC`
       ).all();
       return json(results);
+    }
+
+    // GET /api/history
+    if (path === "/api/history" && request.method === "GET") {
+      const historyWindowStart = new Date(Date.now() - (14 * 24 * 60 * 60 * 1000)).toISOString();
+      const trendWindowStart = new Date(Date.now() - (90 * 24 * 60 * 60 * 1000)).toISOString();
+
+      const { results: removed } = await env.DB.prepare(
+        `SELECT id, item_id, name, note, qty, was_checked, removed_reason, removed_at
+         FROM removed_items
+         WHERE removed_at >= ?
+         ORDER BY removed_at DESC
+         LIMIT 40`
+      ).bind(historyWindowStart).all();
+
+      const { results: recommendations } = await env.DB.prepare(
+        `WITH trend AS (
+          SELECT normalized_name, COUNT(*) AS removals, MAX(removed_at) AS last_removed_at
+          FROM removed_items
+          WHERE was_checked = 1 AND removed_at >= ?
+          GROUP BY normalized_name
+          HAVING COUNT(*) >= 3
+          ORDER BY removals DESC, last_removed_at DESC
+          LIMIT 8
+        )
+        SELECT
+          trend.normalized_name,
+          trend.removals,
+          trend.last_removed_at,
+          (
+            SELECT r2.name
+            FROM removed_items r2
+            WHERE r2.normalized_name = trend.normalized_name
+            ORDER BY r2.removed_at DESC
+            LIMIT 1
+          ) AS name
+        FROM trend`
+      ).bind(trendWindowStart).all();
+
+      return json({ removed, recommendations });
     }
 
     // POST /api/items
@@ -260,6 +325,9 @@ export default {
       if (!item) return json({ error: "Not found" }, 404);
       const newChecked = item.checked ? 0 : 1;
       await env.DB.prepare("UPDATE items SET checked = ? WHERE id = ?").bind(newChecked, id).run();
+      if (newChecked === 1) {
+        await archiveRemovedItem(env, { ...item, checked: 1 }, "got");
+      }
       return json({ ...item, checked: newChecked });
     }
 
@@ -267,6 +335,12 @@ export default {
     const deleteMatch = path.match(/^\/api\/items\/([^/]+)$/);
     if (deleteMatch && request.method === "DELETE") {
       const id = deleteMatch[1];
+      const item = await env.DB.prepare("SELECT * FROM items WHERE id = ?").bind(id).first();
+      if (!item) return json({ error: "Not found" }, 404);
+
+      if (!item.checked) {
+        await archiveRemovedItem(env, item, "removed");
+      }
       await env.DB.prepare("DELETE FROM comments WHERE item_id = ?").bind(id).run();
       await env.DB.prepare("DELETE FROM items WHERE id = ?").bind(id).run();
       return json({ ok: true });
