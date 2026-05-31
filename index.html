@@ -320,6 +320,16 @@
     .item.checked .qty-badge,
     .item.checked .qty-placeholder { opacity: 0.4; pointer-events: none; }
 
+    .item-by {
+      font-size: 11px;
+      color: var(--text-dim);
+      opacity: 0.5;
+      line-height: 1;
+      padding-left: 1px;
+    }
+
+    .item.checked .item-by { display: none; }
+
     .item-note {
       font-size: 13px;
       color: var(--text-dim);
@@ -392,6 +402,13 @@
       background: var(--surface2);
       border-radius: 10px;
       padding: 8px 12px;
+    }
+
+    .comment-author {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 3px;
     }
 
     .comment-text {
@@ -483,6 +500,13 @@
     .icon-btn.walmart { color: var(--walmart); border-color: rgba(0,113,206,0.3); }
     .icon-btn.delete { color: var(--danger); border-color: rgba(247,106,106,0.3); }
 
+    /* Shopping button active state */
+    .icon-btn.shopping-active {
+      color: var(--accent2);
+      border-color: rgba(247,160,106,0.5);
+      background: rgba(247,160,106,0.1);
+    }
+
     /* Empty state */
     .empty {
       display: flex;
@@ -497,6 +521,46 @@
     .empty-icon { font-size: 48px; }
     .empty-title { font-size: 18px; font-weight: 600; color: var(--text); }
     .empty-sub { font-size: 14px; text-align: center; line-height: 1.5; }
+
+    /* Session banner */
+    .session-banner {
+      margin: 10px 20px 0;
+      background: rgba(247, 160, 106, 0.1);
+      border: 1px solid rgba(247, 160, 106, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .session-banner.hidden { display: none; }
+
+    .session-text {
+      font-size: 14px;
+      color: var(--accent2);
+      font-weight: 600;
+    }
+
+    .session-done-btn {
+      background: none;
+      border: 1px solid rgba(247,160,106,0.5);
+      border-radius: 20px;
+      color: var(--accent2);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .session-done-btn:active { opacity: 0.7; }
+    .session-done-btn.hidden { display: none; }
 
     /* Shop all button */
     .footer {
@@ -546,48 +610,27 @@
 
     .clear-btn:active { opacity: 0.65; }
 
-    /* What's new banner */
-    .whats-new {
-      position: fixed;
-      top: calc(var(--safe-top) + 10px);
-      left: 16px;
-      right: 16px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
-      border-radius: var(--radius-sm);
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      z-index: 200;
-      opacity: 0;
-      transform: translateY(-8px);
-      transition: opacity 0.25s, transform 0.25s;
-      pointer-events: none;
-    }
-
-    .whats-new.show {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-
-    .whats-new-label {
-      font-size: 12px;
+    /* What's New changelog */
+    .changelog-block { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+    .changelog-date {
+      font-size: 11px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
       color: var(--accent);
-      white-space: nowrap;
-      flex-shrink: 0;
     }
-
-    .whats-new-names {
-      font-size: 13px;
+    .changelog-item {
+      display: flex;
+      gap: 8px;
+      font-size: 14px;
       color: var(--text);
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      line-height: 1.4;
+    }
+    .changelog-item::before {
+      content: "•";
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 1px;
     }
 
     /* Toast */
@@ -757,9 +800,160 @@
       font-weight: 600;
       white-space: nowrap;
     }
+
+    /* ── Modals ─────────────────────────────────────────────────────────── */
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      padding: 20px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    .modal-overlay.hidden { display: none; }
+
+    .modal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+      animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.92) translateY(12px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-icon { font-size: 38px; }
+    .modal-title { font-size: 20px; font-weight: 700; color: var(--text); text-align: center; }
+    .modal-sub { font-size: 14px; color: var(--text-dim); text-align: center; line-height: 1.5; }
+
+    .modal-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 17px;
+      font-family: inherit;
+      padding: 12px 14px;
+      outline: none;
+      caret-color: var(--accent);
+      text-align: center;
+    }
+
+    .modal-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .modal-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), #9a8af9);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 14px;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .modal-btn:active { opacity: 0.85; transform: scale(0.98); }
+
+    .modal-cancel {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 15px;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Store picker grid */
+    .store-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .store-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 600;
+      padding: 18px 10px 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .store-btn span { font-size: 13px; color: var(--text-dim); font-weight: 600; }
+    .store-btn:active { border-color: var(--accent); background: var(--accent-glow); transform: scale(0.96); }
   </style>
 </head>
 <body>
+
+  <!-- Name setup modal — shown on first launch -->
+  <div class="modal-overlay hidden" id="name-modal">
+    <div class="modal-card">
+      <div class="modal-icon">👋</div>
+      <div class="modal-title">What's your name?</div>
+      <div class="modal-sub">So everyone knows who's adding things to the list.</div>
+      <input
+        class="modal-input"
+        id="name-input"
+        type="text"
+        placeholder="Beth, Greg, Ben…"
+        maxlength="20"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        enterkeyhint="done"
+      />
+      <button class="modal-btn" id="name-save-btn">Let's shop</button>
+    </div>
+  </div>
+
+  <!-- Store picker modal -->
+  <div class="modal-overlay hidden" id="store-modal">
+    <div class="modal-card">
+      <div class="modal-title">Where are you shopping?</div>
+      <div class="store-grid">
+        <button class="store-btn" data-store="walmart">🛒<span>Walmart</span></button>
+        <button class="store-btn" data-store="foodlion">🦁<span>Food Lion</span></button>
+        <button class="store-btn" data-store="publix">🌿<span>Publix</span></button>
+        <button class="store-btn" data-store="other">🏪<span>Other</span></button>
+      </div>
+      <button class="modal-cancel" id="store-cancel">Cancel</button>
+    </div>
+  </div>
 
   <header>
     <div class="logo">
@@ -767,11 +961,18 @@
       <span class="logo-text">Dog Shop</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
+      <button class="icon-btn" id="shopping-btn" title="I'm going shopping" aria-label="Start shopping">🏃</button>
       <button class="icon-btn" id="notif-btn" aria-label="Enable notifications">🔔</button>
       <div class="sync-dot" id="sync-dot"></div>
       <span class="item-count" id="item-count">0 items</span>
     </div>
   </header>
+
+  <!-- Active shopping session banner -->
+  <div class="session-banner hidden" id="session-banner">
+    <span class="session-text" id="session-text"></span>
+    <button class="session-done-btn hidden" id="session-done-btn">Done</button>
+  </div>
 
   <div class="add-section">
     <div class="add-form">
@@ -807,17 +1008,35 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <div class="whats-new" id="whats-new">
-    <span class="whats-new-label">✨ Added</span>
-    <span class="whats-new-names" id="whats-new-names"></span>
+
+  <!-- What's New modal -->
+  <div class="modal-overlay hidden" id="whats-new-modal">
+    <div class="modal-card" style="gap:12px;">
+      <div class="modal-icon">✨</div>
+      <div class="modal-title">What's New</div>
+      <div id="whats-new-list" style="width:100%;display:flex;flex-direction:column;gap:16px;"></div>
+      <button class="modal-btn" id="whats-new-ack">Got it!</button>
+    </div>
   </div>
 
   <script>
     const API = "https://dog-shop-api.gdoggett.workers.dev";
     const VAPID_PUBLIC_KEY = "BApWWtkmLw-40xvXEpRZGdFR9De6O3I-CGyofmH6NqR46tjAPLURv9suS9xhE-ZEBXf-dWSr-IVEgu-ZfALadQw";
+
+    // Store definitions
+    const STORES = {
+      walmart:  { name: "Walmart",   searchUrl: q => `https://www.walmart.com/search?q=${encodeURIComponent(q)}` },
+      foodlion: { name: "Food Lion", searchUrl: q => `https://www.foodlion.com/search?q=${encodeURIComponent(q)}` },
+      publix:   { name: "Publix",    searchUrl: q => `https://www.publix.com/search?q=${encodeURIComponent(q)}` },
+      other:    { name: "Store",     searchUrl: q => `https://www.google.com/search?q=${encodeURIComponent(q + " grocery")}` },
+    };
+
     let items = [];
     let activeTab = "all";
     let pollTimer = null;
+    let sessionPollTimer = null;
+    let userName = localStorage.getItem("userName") || null;
+    let currentSession = null;
 
     // Elements
     const listEl = document.getElementById("list");
@@ -828,6 +1047,15 @@
     const countEl = document.getElementById("item-count");
     const syncDot = document.getElementById("sync-dot");
     const toastEl = document.getElementById("toast");
+    const shoppingBtn = document.getElementById("shopping-btn");
+    const sessionBanner = document.getElementById("session-banner");
+    const sessionText = document.getElementById("session-text");
+    const sessionDoneBtn = document.getElementById("session-done-btn");
+
+    // Store helpers
+    function activeStore() { return currentSession?.store || "walmart"; }
+    function activeStoreName() { return STORES[activeStore()]?.name || "Walmart"; }
+    function itemSearchUrl(name) { return STORES[activeStore()].searchUrl(name); }
 
     // Toast
     let toastTimer;
@@ -843,6 +1071,13 @@
     function setSynced() { syncDot.className = "sync-dot"; }
     function setSyncError() { syncDot.className = "sync-dot error"; }
 
+    // Stable fingerprint of everything visible in the list
+    function itemsFingerprint(arr) {
+      return arr.map(i =>
+        `${i.id}:${i.checked}:${i.comment_count || 0}:${i.qty || ""}:${i.note || ""}:${i.added_by || ""}`
+      ).join("|");
+    }
+
     // Fetch items
     async function loadItems(silent = false) {
       if (silent && (document.querySelector(".note-input") || document.querySelector(".thread.open"))) return;
@@ -851,6 +1086,11 @@
         const res = await fetch(`${API}/api/items`);
         if (!res.ok) throw new Error();
         const data = await res.json();
+        // Skip re-render on background polls if nothing changed
+        if (silent && itemsFingerprint(data) === itemsFingerprint(items)) {
+          setSynced();
+          return;
+        }
         items = data;
         render();
         setSynced();
@@ -876,6 +1116,7 @@
 
       // Shop button
       shopBtn.disabled = unchecked.length === 0;
+      shopBtn.textContent = `🛒 Shop All on ${activeStoreName()}`;
 
       // Render
       listEl.innerHTML = "";
@@ -894,7 +1135,6 @@
       }
 
       if (activeTab === "all" && unchecked.length > 0 && checked.length > 0) {
-        // Show divider between unchecked and checked
         visible = unchecked;
         visible.forEach(item => listEl.appendChild(makeCard(item)));
         const div = document.createElement("div");
@@ -912,7 +1152,7 @@
       el.className = `item${item.checked ? " checked" : ""}`;
       el.dataset.id = item.id;
 
-      const walmartUrl = `https://www.walmart.com/search?q=${encodeURIComponent(item.name)}`;
+      const searchUrl = itemSearchUrl(item.name);
       const noteHtml = item.note
         ? `<span class="item-note">${escHtml(item.note)}</span>`
         : `<span class="note-placeholder">+ note</span>`;
@@ -925,6 +1165,10 @@
         ? `<span class="comment-indicator">💬 ${count}</span>`
         : `<span class="comment-placeholder-small">💬</span>`;
 
+      const addedByHtml = item.added_by
+        ? `<div class="item-by">• ${escHtml(item.added_by)}</div>`
+        : "";
+
       el.innerHTML = `
         <button class="check-btn" aria-label="Toggle checked">
           ${item.checked ? "✓" : ""}
@@ -934,12 +1178,13 @@
             <div class="qty-area">${qtyHtml}</div>
             <span class="item-name">${escHtml(item.name)}</span>
           </div>
+          ${addedByHtml}
           <div class="note-area">${noteHtml}</div>
           <div class="comment-trigger">${commentTriggerHtml}</div>
           <div class="thread"></div>
         </div>
         <div class="item-actions">
-          <a class="icon-btn walmart" href="${walmartUrl}" target="_blank" rel="noopener" aria-label="Find on Walmart">🛒</a>
+          <a class="icon-btn walmart" href="${searchUrl}" aria-label="Find on ${activeStoreName()}">🛒</a>
           <button class="icon-btn delete" aria-label="Delete item">✕</button>
         </div>`;
 
@@ -984,6 +1229,7 @@
       const commentsHtml = comments.length
         ? comments.map(c => `
             <div class="comment">
+              ${c.author ? `<div class="comment-author">${escHtml(c.author)}</div>` : ""}
               <div class="comment-text">${escHtml(c.text)}</div>
               <div class="comment-time">${timeAgo(c.created_at)}</div>
             </div>`).join("")
@@ -1008,7 +1254,7 @@
           const res = await fetch(`${API}/api/items/${item.id}/comments`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, senderEndpoint }),
+            body: JSON.stringify({ text, senderEndpoint, author: userName }),
           });
           const comment = await res.json();
           const list = thread.querySelector(".comments-list");
@@ -1017,6 +1263,7 @@
           const div = document.createElement("div");
           div.className = "comment";
           div.innerHTML = `
+            ${userName ? `<div class="comment-author">${escHtml(userName)}</div>` : ""}
             <div class="comment-text">${escHtml(comment.text)}</div>
             <div class="comment-time">just now</div>`;
           list.appendChild(div);
@@ -1117,12 +1364,11 @@
         const res = await fetch(`${API}/api/items`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, senderEndpoint }),
+          body: JSON.stringify({ name, senderEndpoint, added_by: userName }),
         });
         if (!res.ok) throw new Error();
         const item = await res.json();
         items.unshift(item);
-        // Move to correct position (end of unchecked)
         items = [...items.filter(i => !i.checked), ...items.filter(i => i.checked)];
         render();
         setSynced();
@@ -1187,12 +1433,12 @@
       }
     }
 
-    // Shop all on Walmart
+    // Shop all — store-aware, same tab so back button returns to app
     function shopAll() {
       const unchecked = items.filter(i => !i.checked);
       if (unchecked.length === 0) return;
       const query = unchecked.map(i => i.name).join(" ");
-      window.open(`https://www.walmart.com/search?q=${encodeURIComponent(query)}`, "_blank");
+      window.location.href = STORES[activeStore()].searchUrl(query);
     }
 
     // ─── History ─────────────────────────────────────────────────────────────
@@ -1296,7 +1542,7 @@
         const res = await fetch(`${API}/api/items`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, senderEndpoint }),
+          body: JSON.stringify({ name, senderEndpoint, added_by: userName }),
         });
         if (!res.ok) throw new Error();
         const item = await res.json();
@@ -1345,34 +1591,184 @@
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         clearInterval(pollTimer);
+        clearInterval(sessionPollTimer);
       } else {
         loadItems(true);
+        loadSession();
         startPolling();
+        sessionPollTimer = setInterval(loadSession, 10000);
       }
     });
 
-    // ─── What's new banner ────────────────────────────────────────────────────
-    const WHATS_NEW = {
-      version: "2026-05-21-history",
-      message: "New: History tab — see what you've bought, grouped by day",
-    };
+    // ─── What's New modal ─────────────────────────────────────────────────────
+    const CHANGELOG = [
+      {
+        version: "2026-05-21-history",
+        date: "May 21",
+        changes: [
+          "History tab — see everything you've bought, grouped by day",
+          "Suggestions — items you buy regularly bubble up automatically",
+          "Comment threads — ask questions on any item, get push notifications",
+        ],
+      },
+      {
+        version: "2026-05-31-user-session",
+        date: "May 31",
+        changes: [
+          "Your name — set it once, shows on everything you add",
+          "See who added each item at a glance",
+          "Comment threads show who said what",
+          "\"I'm shopping\" mode — tell the family where you are",
+          "Store-aware search — links go to Walmart, Food Lion, or Publix",
+        ],
+      },
+    ];
 
-    const whatsNewEl = document.getElementById("whats-new");
-    const whatsNewNames = document.getElementById("whats-new-names");
-    let whatsNewTimer = null;
+    const LATEST_VERSION = CHANGELOG[CHANGELOG.length - 1].version;
 
     function checkWhatsNew() {
-      if (localStorage.getItem("whatsNewSeen") === WHATS_NEW.version) return;
-      whatsNewNames.textContent = WHATS_NEW.message;
-      whatsNewEl.classList.add("show");
-      whatsNewTimer = setTimeout(() => whatsNewEl.classList.remove("show"), 6000);
+      const lastSeen = localStorage.getItem("whatsNewSeen") || "";
+      const lastIdx = CHANGELOG.findIndex(c => c.version === lastSeen);
+      // Show all entries newer than last acknowledged (or all if never seen)
+      const unseen = lastIdx === -1 ? CHANGELOG : CHANGELOG.slice(lastIdx + 1);
+      if (unseen.length === 0) return;
+
+      const listEl = document.getElementById("whats-new-list");
+      listEl.innerHTML = unseen.map(entry => `
+        <div class="changelog-block">
+          <div class="changelog-date">${entry.date}</div>
+          ${entry.changes.map(c => `
+            <div class="changelog-item"><span>${c}</span></div>
+          `).join("")}
+        </div>
+      `).join("");
+
+      document.getElementById("whats-new-modal").classList.remove("hidden");
     }
 
-    whatsNewEl.addEventListener("click", () => {
-      clearTimeout(whatsNewTimer);
-      whatsNewEl.classList.remove("show");
-      localStorage.setItem("whatsNewSeen", WHATS_NEW.version);
+    document.getElementById("whats-new-ack").addEventListener("click", () => {
+      document.getElementById("whats-new-modal").classList.add("hidden");
+      localStorage.setItem("whatsNewSeen", LATEST_VERSION);
     });
+
+    // ─── User name ───────────────────────────────────────────────────────────
+
+    // Wire up name modal once
+    (function setupNameModal() {
+      const modal = document.getElementById("name-modal");
+      const input = document.getElementById("name-input");
+      const btn = document.getElementById("name-save-btn");
+
+      const save = () => {
+        const name = input.value.trim();
+        if (!name) { input.focus(); return; }
+        userName = name;
+        localStorage.setItem("userName", name);
+        modal.classList.add("hidden");
+      };
+
+      btn.addEventListener("click", save);
+      input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } });
+    })();
+
+    function checkName() {
+      if (!userName) {
+        document.getElementById("name-modal").classList.remove("hidden");
+        setTimeout(() => document.getElementById("name-input").focus(), 350);
+      }
+    }
+
+    // ─── Shopping session ────────────────────────────────────────────────────
+
+    // Wire up store modal once
+    (function setupStoreModal() {
+      const modal = document.getElementById("store-modal");
+
+      document.querySelectorAll(".store-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          modal.classList.add("hidden");
+          startShopping(btn.dataset.store);
+        });
+      });
+
+      document.getElementById("store-cancel").addEventListener("click", () => {
+        modal.classList.add("hidden");
+      });
+    })();
+
+    shoppingBtn.addEventListener("click", () => {
+      if (!userName) { checkName(); return; }
+      if (currentSession && currentSession.shopper === userName) {
+        stopShopping();
+      } else {
+        document.getElementById("store-modal").classList.remove("hidden");
+      }
+    });
+
+    sessionDoneBtn.addEventListener("click", stopShopping);
+
+    async function startShopping(store) {
+      try {
+        const res = await fetch(`${API}/api/session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ shopper: userName, store }),
+        });
+        if (!res.ok) throw new Error();
+        currentSession = { shopper: userName, store, started_at: new Date().toISOString() };
+        renderSessionBanner(currentSession);
+        render();
+        showToast(`Shopping at ${STORES[store].name}!`);
+        if ("vibrate" in navigator) navigator.vibrate([20, 40, 20]);
+      } catch {
+        showToast("Couldn't start session");
+      }
+    }
+
+    async function stopShopping() {
+      try {
+        await fetch(`${API}/api/session`, { method: "DELETE" });
+        currentSession = null;
+        renderSessionBanner(null);
+        render();
+        showToast("Shopping done!");
+      } catch {
+        showToast("Couldn't end session");
+      }
+    }
+
+    async function loadSession() {
+      try {
+        const res = await fetch(`${API}/api/session`);
+        const session = await res.json();
+        currentSession = session;
+        renderSessionBanner(session);
+      } catch { /* best effort — don't break if this fails */ }
+    }
+
+    function renderSessionBanner(session) {
+      if (!session) {
+        sessionBanner.classList.add("hidden");
+        shoppingBtn.classList.remove("shopping-active");
+        shoppingBtn.title = "I'm going shopping";
+        return;
+      }
+
+      const storeName = STORES[session.store]?.name || "the store";
+      sessionText.textContent = `${session.shopper} is shopping at ${storeName} 🛒`;
+      sessionBanner.classList.remove("hidden");
+
+      const isMe = session.shopper === userName;
+      if (isMe) {
+        sessionDoneBtn.classList.remove("hidden");
+        shoppingBtn.classList.add("shopping-active");
+        shoppingBtn.title = "You're shopping — tap to finish";
+      } else {
+        sessionDoneBtn.classList.add("hidden");
+        shoppingBtn.classList.remove("shopping-active");
+        shoppingBtn.title = `${session.shopper} is shopping`;
+      }
+    }
 
     // ─── Notifications ───────────────────────────────────────────────────────
     const notifBtn = document.getElementById("notif-btn");
@@ -1434,6 +1830,9 @@
     loadItems();
     startPolling();
     checkWhatsNew();
+    checkName();
+    loadSession();
+    sessionPollTimer = setInterval(loadSession, 10000);
   </script>
 </body>
 </html>

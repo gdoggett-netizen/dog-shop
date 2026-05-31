@@ -236,21 +236,22 @@ export default {
 
     // POST /api/items
     if (path === "/api/items" && request.method === "POST") {
-      const { name, senderEndpoint } = await request.json();
+      const { name, senderEndpoint, added_by } = await request.json();
       if (!name || !name.trim()) return json({ error: "Name required" }, 400);
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
       await env.DB.prepare(
-        "INSERT INTO items (id, name, checked, created_at) VALUES (?, ?, 0, ?)"
-      ).bind(id, name.trim(), now).run();
+        "INSERT INTO items (id, name, checked, created_at, added_by) VALUES (?, ?, 0, ?, ?)"
+      ).bind(id, name.trim(), now, added_by || null).run();
 
       if (env.VAPID_PRIVATE_KEY && env.VAPID_PRIVATE_KEY !== "REPLACE_WITH_VAPID_PRIVATE_KEY") {
-        ctx.waitUntil(
-          sendPushes(env, "Dog Shop 🛒", `"${name.trim()}" was added to the list`, senderEndpoint)
-        );
+        const pushBody = added_by
+          ? `${added_by} added "${name.trim()}" to the list`
+          : `"${name.trim()}" was added to the list`;
+        ctx.waitUntil(sendPushes(env, "Dog Shop 🛒", pushBody, senderEndpoint));
       }
 
-      return json({ id, name: name.trim(), checked: 0, created_at: now }, 201);
+      return json({ id, name: name.trim(), checked: 0, created_at: now, added_by: added_by || null }, 201);
     }
 
     // POST /api/subscribe
@@ -283,20 +284,20 @@ export default {
     }
     if (commentsMatch && request.method === "POST") {
       const id = commentsMatch[1];
-      const { text, senderEndpoint } = await request.json();
+      const { text, senderEndpoint, author } = await request.json();
       if (!text || !text.trim()) return json({ error: "Text required" }, 400);
       const commentId = crypto.randomUUID();
       const now = new Date().toISOString();
       await env.DB.prepare(
-        "INSERT INTO comments (id, item_id, text, created_at) VALUES (?, ?, ?, ?)"
-      ).bind(commentId, id, text.trim(), now).run();
+        "INSERT INTO comments (id, item_id, text, created_at, author) VALUES (?, ?, ?, ?, ?)"
+      ).bind(commentId, id, text.trim(), now, author || null).run();
       const item = await env.DB.prepare("SELECT name FROM items WHERE id = ?").bind(id).first();
       if (item && env.VAPID_PRIVATE_KEY && env.VAPID_PRIVATE_KEY !== "REPLACE_WITH_VAPID_PRIVATE_KEY") {
-        ctx.waitUntil(
-          sendPushes(env, "Dog Shop 💬", `"${item.name}": ${text.trim()}`, senderEndpoint)
-        );
+        const pushTitle = author ? `${author} on "${item.name}"` : `Dog Shop 💬`;
+        const pushBody = author ? text.trim() : `"${item.name}": ${text.trim()}`;
+        ctx.waitUntil(sendPushes(env, pushTitle, pushBody, senderEndpoint));
       }
-      return json({ id: commentId, item_id: id, text: text.trim(), created_at: now }, 201);
+      return json({ id: commentId, item_id: id, text: text.trim(), created_at: now, author: author || null }, 201);
     }
 
     // PATCH /api/items/:id/qty
@@ -343,6 +344,35 @@ export default {
       }
       await env.DB.prepare("DELETE FROM comments WHERE item_id = ?").bind(id).run();
       await env.DB.prepare("DELETE FROM items WHERE id = ?").bind(id).run();
+      return json({ ok: true });
+    }
+
+    // GET /api/session
+    if (path === "/api/session" && request.method === "GET") {
+      const session = await env.DB.prepare("SELECT * FROM shopping_session WHERE id = 1").first();
+      if (!session) return json(null);
+      // Auto-expire after 6 hours
+      if (Date.now() - new Date(session.started_at).getTime() > 6 * 60 * 60 * 1000) {
+        await env.DB.prepare("DELETE FROM shopping_session WHERE id = 1").run();
+        return json(null);
+      }
+      return json(session);
+    }
+
+    // POST /api/session
+    if (path === "/api/session" && request.method === "POST") {
+      const { shopper, store } = await request.json();
+      if (!shopper || !store) return json({ error: "Missing fields" }, 400);
+      const now = new Date().toISOString();
+      await env.DB.prepare(
+        "INSERT OR REPLACE INTO shopping_session (id, shopper, store, started_at) VALUES (1, ?, ?, ?)"
+      ).bind(shopper, store, now).run();
+      return json({ shopper, store, started_at: now });
+    }
+
+    // DELETE /api/session
+    if (path === "/api/session" && request.method === "DELETE") {
+      await env.DB.prepare("DELETE FROM shopping_session WHERE id = 1").run();
       return json({ ok: true });
     }
 
