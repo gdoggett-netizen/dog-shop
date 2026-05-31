@@ -1071,6 +1071,13 @@
     function setSynced() { syncDot.className = "sync-dot"; }
     function setSyncError() { syncDot.className = "sync-dot error"; }
 
+    // Stable fingerprint of everything visible in the list
+    function itemsFingerprint(arr) {
+      return arr.map(i =>
+        `${i.id}:${i.checked}:${i.comment_count || 0}:${i.qty || ""}:${i.note || ""}:${i.added_by || ""}`
+      ).join("|");
+    }
+
     // Fetch items
     async function loadItems(silent = false) {
       if (silent && (document.querySelector(".note-input") || document.querySelector(".thread.open"))) return;
@@ -1079,6 +1086,11 @@
         const res = await fetch(`${API}/api/items`);
         if (!res.ok) throw new Error();
         const data = await res.json();
+        // Skip re-render on background polls if nothing changed
+        if (silent && itemsFingerprint(data) === itemsFingerprint(items)) {
+          setSynced();
+          return;
+        }
         items = data;
         render();
         setSynced();
