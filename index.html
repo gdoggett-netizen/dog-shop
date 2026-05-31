@@ -610,48 +610,27 @@
 
     .clear-btn:active { opacity: 0.65; }
 
-    /* What's new banner */
-    .whats-new {
-      position: fixed;
-      top: calc(var(--safe-top) + 10px);
-      left: 16px;
-      right: 16px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
-      border-radius: var(--radius-sm);
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      z-index: 200;
-      opacity: 0;
-      transform: translateY(-8px);
-      transition: opacity 0.25s, transform 0.25s;
-      pointer-events: none;
-    }
-
-    .whats-new.show {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-
-    .whats-new-label {
-      font-size: 12px;
+    /* What's New changelog */
+    .changelog-block { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+    .changelog-date {
+      font-size: 11px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
       color: var(--accent);
-      white-space: nowrap;
-      flex-shrink: 0;
     }
-
-    .whats-new-names {
-      font-size: 13px;
+    .changelog-item {
+      display: flex;
+      gap: 8px;
+      font-size: 14px;
       color: var(--text);
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      line-height: 1.4;
+    }
+    .changelog-item::before {
+      content: "•";
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 1px;
     }
 
     /* Toast */
@@ -1029,9 +1008,15 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <div class="whats-new" id="whats-new">
-    <span class="whats-new-label">✨ New</span>
-    <span class="whats-new-names" id="whats-new-names"></span>
+
+  <!-- What's New modal -->
+  <div class="modal-overlay hidden" id="whats-new-modal">
+    <div class="modal-card" style="gap:12px;">
+      <div class="modal-icon">✨</div>
+      <div class="modal-title">What's New</div>
+      <div id="whats-new-list" style="width:100%;display:flex;flex-direction:column;gap:16px;"></div>
+      <button class="modal-btn" id="whats-new-ack">Got it!</button>
+    </div>
   </div>
 
   <script>
@@ -1603,27 +1588,55 @@
       }
     });
 
-    // ─── What's new banner ────────────────────────────────────────────────────
-    const WHATS_NEW = {
-      version: "2026-05-31-user-session",
-      message: "New: set your name, see who added what, and mark when you're shopping",
-    };
+    // ─── What's New modal ─────────────────────────────────────────────────────
+    const CHANGELOG = [
+      {
+        version: "2026-05-21-history",
+        date: "May 21",
+        changes: [
+          "History tab — see everything you've bought, grouped by day",
+          "Suggestions — items you buy regularly bubble up automatically",
+          "Comment threads — ask questions on any item, get push notifications",
+        ],
+      },
+      {
+        version: "2026-05-31-user-session",
+        date: "May 31",
+        changes: [
+          "Your name — set it once, shows on everything you add",
+          "See who added each item at a glance",
+          "Comment threads show who said what",
+          "\"I'm shopping\" mode — tell the family where you are",
+          "Store-aware search — links go to Walmart, Food Lion, or Publix",
+        ],
+      },
+    ];
 
-    const whatsNewEl = document.getElementById("whats-new");
-    const whatsNewNames = document.getElementById("whats-new-names");
-    let whatsNewTimer = null;
+    const LATEST_VERSION = CHANGELOG[CHANGELOG.length - 1].version;
 
     function checkWhatsNew() {
-      if (localStorage.getItem("whatsNewSeen") === WHATS_NEW.version) return;
-      whatsNewNames.textContent = WHATS_NEW.message;
-      whatsNewEl.classList.add("show");
-      whatsNewTimer = setTimeout(() => whatsNewEl.classList.remove("show"), 7000);
+      const lastSeen = localStorage.getItem("whatsNewSeen") || "";
+      const lastIdx = CHANGELOG.findIndex(c => c.version === lastSeen);
+      // Show all entries newer than last acknowledged (or all if never seen)
+      const unseen = lastIdx === -1 ? CHANGELOG : CHANGELOG.slice(lastIdx + 1);
+      if (unseen.length === 0) return;
+
+      const listEl = document.getElementById("whats-new-list");
+      listEl.innerHTML = unseen.map(entry => `
+        <div class="changelog-block">
+          <div class="changelog-date">${entry.date}</div>
+          ${entry.changes.map(c => `
+            <div class="changelog-item"><span>${c}</span></div>
+          `).join("")}
+        </div>
+      `).join("");
+
+      document.getElementById("whats-new-modal").classList.remove("hidden");
     }
 
-    whatsNewEl.addEventListener("click", () => {
-      clearTimeout(whatsNewTimer);
-      whatsNewEl.classList.remove("show");
-      localStorage.setItem("whatsNewSeen", WHATS_NEW.version);
+    document.getElementById("whats-new-ack").addEventListener("click", () => {
+      document.getElementById("whats-new-modal").classList.add("hidden");
+      localStorage.setItem("whatsNewSeen", LATEST_VERSION);
     });
 
     // ─── User name ───────────────────────────────────────────────────────────
