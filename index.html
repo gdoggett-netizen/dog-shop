@@ -1041,7 +1041,7 @@
     // Store definitions
     const STORES = {
       walmart:  { name: "Walmart",   searchUrl: q => `https://www.walmart.com/search?q=${encodeURIComponent(q)}` },
-      foodlion: { name: "Food Lion", searchUrl: q => `https://shop.foodlion.com/search?q=${encodeURIComponent(q)}` },
+      foodlion: { name: "Food Lion", searchUrl: q => `https://www.foodlion.com/search?q=${encodeURIComponent(q)}` },
       publix:   { name: "Publix",    searchUrl: q => `https://www.publix.com/search?q=${encodeURIComponent(q)}` },
       other:    { name: "Store",     searchUrl: q => `https://www.google.com/search?q=${encodeURIComponent(q + " grocery")}` },
     };
@@ -1187,7 +1187,7 @@
           <div class="thread"></div>
         </div>
         <div class="item-actions">
-          <a class="icon-btn walmart" href="${searchUrl}" target="_blank" rel="noopener" aria-label="Find on ${activeStoreName()}">🛒</a>
+          <a class="icon-btn walmart" href="${searchUrl}" aria-label="Find on ${activeStoreName()}">🛒</a>
           <button class="icon-btn delete" aria-label="Delete item">✕</button>
         </div>`;
 
@@ -1436,12 +1436,12 @@
       }
     }
 
-    // Shop all — store-aware
+    // Shop all — store-aware, same tab so back button returns to app
     function shopAll() {
       const unchecked = items.filter(i => !i.checked);
       if (unchecked.length === 0) return;
       const query = unchecked.map(i => i.name).join(" ");
-      window.open(STORES[activeStore()].searchUrl(query), "_blank");
+      window.location.href = STORES[activeStore()].searchUrl(query);
     }
 
     // ─── History ─────────────────────────────────────────────────────────────
