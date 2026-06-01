@@ -26,7 +26,6 @@
       --checked-text: #5a5a78;
       --danger: #f76a6a;
       --walmart: #0071ce;
-      --walmart-hover: #0058a3;
       --success: #6af7a0;
       --radius: 16px;
       --radius-sm: 10px;
@@ -500,13 +499,6 @@
     .icon-btn.walmart { color: var(--walmart); border-color: rgba(0,113,206,0.3); }
     .icon-btn.delete { color: var(--danger); border-color: rgba(247,106,106,0.3); }
 
-    /* Shopping button active state */
-    .icon-btn.shopping-active {
-      color: var(--accent2);
-      border-color: rgba(247,160,106,0.5);
-      background: rgba(247,160,106,0.1);
-    }
-
     /* Empty state */
     .empty {
       display: flex;
@@ -521,46 +513,6 @@
     .empty-icon { font-size: 48px; }
     .empty-title { font-size: 18px; font-weight: 600; color: var(--text); }
     .empty-sub { font-size: 14px; text-align: center; line-height: 1.5; }
-
-    /* Session banner */
-    .session-banner {
-      margin: 10px 20px 0;
-      background: rgba(247, 160, 106, 0.1);
-      border: 1px solid rgba(247, 160, 106, 0.3);
-      border-radius: var(--radius-sm);
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-
-    .session-banner.hidden { display: none; }
-
-    .session-text {
-      font-size: 14px;
-      color: var(--accent2);
-      font-weight: 600;
-    }
-
-    .session-done-btn {
-      background: none;
-      border: 1px solid rgba(247,160,106,0.5);
-      border-radius: 20px;
-      color: var(--accent2);
-      font-size: 13px;
-      font-weight: 600;
-      padding: 4px 12px;
-      cursor: pointer;
-      white-space: nowrap;
-      font-family: inherit;
-      flex-shrink: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .session-done-btn:active { opacity: 0.7; }
-    .session-done-btn.hidden { display: none; }
 
     /* Shop all button */
     .footer {
@@ -888,34 +840,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Store picker grid */
-    .store-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      width: 100%;
-    }
-
-    .store-btn {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-size: 22px;
-      font-weight: 600;
-      padding: 18px 10px 14px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      font-family: inherit;
-      transition: all 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .store-btn span { font-size: 13px; color: var(--text-dim); font-weight: 600; }
-    .store-btn:active { border-color: var(--accent); background: var(--accent-glow); transform: scale(0.96); }
   </style>
 </head>
 <body>
@@ -941,38 +865,17 @@
     </div>
   </div>
 
-  <!-- Store picker modal -->
-  <div class="modal-overlay hidden" id="store-modal">
-    <div class="modal-card">
-      <div class="modal-title">Where are you shopping?</div>
-      <div class="store-grid">
-        <button class="store-btn" data-store="walmart">🛒<span>Walmart</span></button>
-        <button class="store-btn" data-store="foodlion">🦁<span>Food Lion</span></button>
-        <button class="store-btn" data-store="publix">🌿<span>Publix</span></button>
-        <button class="store-btn" data-store="other">🏪<span>Other</span></button>
-      </div>
-      <button class="modal-cancel" id="store-cancel">Cancel</button>
-    </div>
-  </div>
-
   <header>
     <div class="logo">
       <div class="logo-icon">🛒</div>
       <span class="logo-text">Dog Shop</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <button class="icon-btn" id="shopping-btn" title="I'm going shopping" aria-label="Start shopping">🏃</button>
       <button class="icon-btn" id="notif-btn" aria-label="Enable notifications">🔔</button>
       <div class="sync-dot" id="sync-dot"></div>
       <span class="item-count" id="item-count">0 items</span>
     </div>
   </header>
-
-  <!-- Active shopping session banner -->
-  <div class="session-banner hidden" id="session-banner">
-    <span class="session-text" id="session-text"></span>
-    <button class="session-done-btn hidden" id="session-done-btn">Done</button>
-  </div>
 
   <div class="add-section">
     <div class="add-form">
@@ -1023,20 +926,10 @@
     const API = "https://dog-shop-api.gdoggett.workers.dev";
     const VAPID_PUBLIC_KEY = "BApWWtkmLw-40xvXEpRZGdFR9De6O3I-CGyofmH6NqR46tjAPLURv9suS9xhE-ZEBXf-dWSr-IVEgu-ZfALadQw";
 
-    // Store definitions
-    const STORES = {
-      walmart:  { name: "Walmart",   searchUrl: q => `https://www.walmart.com/search?q=${encodeURIComponent(q)}` },
-      foodlion: { name: "Food Lion", searchUrl: q => `https://www.foodlion.com/search?q=${encodeURIComponent(q)}` },
-      publix:   { name: "Publix",    searchUrl: q => `https://www.publix.com/search?q=${encodeURIComponent(q)}` },
-      other:    { name: "Store",     searchUrl: q => `https://www.google.com/search?q=${encodeURIComponent(q + " grocery")}` },
-    };
-
     let items = [];
     let activeTab = "all";
     let pollTimer = null;
-    let sessionPollTimer = null;
     let userName = localStorage.getItem("userName") || null;
-    let currentSession = null;
 
     // Elements
     const listEl = document.getElementById("list");
@@ -1047,16 +940,6 @@
     const countEl = document.getElementById("item-count");
     const syncDot = document.getElementById("sync-dot");
     const toastEl = document.getElementById("toast");
-    const shoppingBtn = document.getElementById("shopping-btn");
-    const sessionBanner = document.getElementById("session-banner");
-    const sessionText = document.getElementById("session-text");
-    const sessionDoneBtn = document.getElementById("session-done-btn");
-
-    // Store helpers
-    function activeStore() { return currentSession?.store || "walmart"; }
-    function activeStoreName() { return STORES[activeStore()]?.name || "Walmart"; }
-    function itemSearchUrl(name) { return STORES[activeStore()].searchUrl(name); }
-
     // Toast
     let toastTimer;
     function showToast(msg) {
@@ -1116,7 +999,7 @@
 
       // Shop button
       shopBtn.disabled = unchecked.length === 0;
-      shopBtn.textContent = `🛒 Shop All on ${activeStoreName()}`;
+      shopBtn.textContent = "🛒 Shop All on Walmart";
 
       // Render
       listEl.innerHTML = "";
@@ -1152,7 +1035,7 @@
       el.className = `item${item.checked ? " checked" : ""}`;
       el.dataset.id = item.id;
 
-      const searchUrl = itemSearchUrl(item.name);
+      const searchUrl = `https://www.walmart.com/search?q=${encodeURIComponent(item.name)}`;
       const noteHtml = item.note
         ? `<span class="item-note">${escHtml(item.note)}</span>`
         : `<span class="note-placeholder">+ note</span>`;
@@ -1184,7 +1067,7 @@
           <div class="thread"></div>
         </div>
         <div class="item-actions">
-          <a class="icon-btn walmart" href="${searchUrl}" aria-label="Find on ${activeStoreName()}">🛒</a>
+          <a class="icon-btn walmart" href="${searchUrl}" aria-label="Find on Walmart">🛒</a>
           <button class="icon-btn delete" aria-label="Delete item">✕</button>
         </div>`;
 
@@ -1433,12 +1316,12 @@
       }
     }
 
-    // Shop all — store-aware, same tab so back button returns to app
+    // Shop all — same tab so back button returns to app
     function shopAll() {
       const unchecked = items.filter(i => !i.checked);
       if (unchecked.length === 0) return;
       const query = unchecked.map(i => i.name).join(" ");
-      window.location.href = STORES[activeStore()].searchUrl(query);
+      window.location.href = `https://www.walmart.com/search?q=${encodeURIComponent(query)}`;
     }
 
     // ─── History ─────────────────────────────────────────────────────────────
@@ -1591,12 +1474,9 @@
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         clearInterval(pollTimer);
-        clearInterval(sessionPollTimer);
       } else {
         loadItems(true);
-        loadSession();
         startPolling();
-        sessionPollTimer = setInterval(loadSession, 10000);
       }
     });
 
@@ -1618,8 +1498,14 @@
           "Your name — set it once, shows on everything you add",
           "See who added each item at a glance",
           "Comment threads show who said what",
-          "\"I'm shopping\" mode — tell the family where you are",
-          "Store-aware search — links go to Walmart, Food Lion, or Publix",
+        ],
+      },
+      {
+        version: "2026-05-31-welcome",
+        date: "May 31",
+        changes: [
+          "Simplified — no store picker, just your name on the list",
+          "Welcome back greeting when you open the app",
         ],
       },
     ];
@@ -1675,98 +1561,8 @@
       if (!userName) {
         document.getElementById("name-modal").classList.remove("hidden");
         setTimeout(() => document.getElementById("name-input").focus(), 350);
-      }
-    }
-
-    // ─── Shopping session ────────────────────────────────────────────────────
-
-    // Wire up store modal once
-    (function setupStoreModal() {
-      const modal = document.getElementById("store-modal");
-
-      document.querySelectorAll(".store-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          modal.classList.add("hidden");
-          startShopping(btn.dataset.store);
-        });
-      });
-
-      document.getElementById("store-cancel").addEventListener("click", () => {
-        modal.classList.add("hidden");
-      });
-    })();
-
-    shoppingBtn.addEventListener("click", () => {
-      if (!userName) { checkName(); return; }
-      if (currentSession && currentSession.shopper === userName) {
-        stopShopping();
       } else {
-        document.getElementById("store-modal").classList.remove("hidden");
-      }
-    });
-
-    sessionDoneBtn.addEventListener("click", stopShopping);
-
-    async function startShopping(store) {
-      try {
-        const res = await fetch(`${API}/api/session`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ shopper: userName, store }),
-        });
-        if (!res.ok) throw new Error();
-        currentSession = { shopper: userName, store, started_at: new Date().toISOString() };
-        renderSessionBanner(currentSession);
-        render();
-        showToast(`Shopping at ${STORES[store].name}!`);
-        if ("vibrate" in navigator) navigator.vibrate([20, 40, 20]);
-      } catch {
-        showToast("Couldn't start session");
-      }
-    }
-
-    async function stopShopping() {
-      try {
-        await fetch(`${API}/api/session`, { method: "DELETE" });
-        currentSession = null;
-        renderSessionBanner(null);
-        render();
-        showToast("Shopping done!");
-      } catch {
-        showToast("Couldn't end session");
-      }
-    }
-
-    async function loadSession() {
-      try {
-        const res = await fetch(`${API}/api/session`);
-        const session = await res.json();
-        currentSession = session;
-        renderSessionBanner(session);
-      } catch { /* best effort — don't break if this fails */ }
-    }
-
-    function renderSessionBanner(session) {
-      if (!session) {
-        sessionBanner.classList.add("hidden");
-        shoppingBtn.classList.remove("shopping-active");
-        shoppingBtn.title = "I'm going shopping";
-        return;
-      }
-
-      const storeName = STORES[session.store]?.name || "the store";
-      sessionText.textContent = `${session.shopper} is shopping at ${storeName} 🛒`;
-      sessionBanner.classList.remove("hidden");
-
-      const isMe = session.shopper === userName;
-      if (isMe) {
-        sessionDoneBtn.classList.remove("hidden");
-        shoppingBtn.classList.add("shopping-active");
-        shoppingBtn.title = "You're shopping — tap to finish";
-      } else {
-        sessionDoneBtn.classList.add("hidden");
-        shoppingBtn.classList.remove("shopping-active");
-        shoppingBtn.title = `${session.shopper} is shopping`;
+        setTimeout(() => showToast(`Welcome back, ${userName}! 👋`), 600);
       }
     }
 
@@ -1831,8 +1627,6 @@
     startPolling();
     checkWhatsNew();
     checkName();
-    loadSession();
-    sessionPollTimer = setInterval(loadSession, 10000);
   </script>
 </body>
 </html>
