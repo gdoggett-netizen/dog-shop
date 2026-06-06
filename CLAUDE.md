@@ -2,6 +2,11 @@
 
 For full system context, vault structure, and pipeline overview: see `gdog-brains/CLAUDE.md`.
 
+## Governance
+This file is additive to `~/Gdog Brains/CLAUDE.md` and `Canon.md` — those govern first.
+To override vault governance for this repo: write the override into this repo's `Canon.md`
+under `## Overrides`, state what it overrides and why, and commit with `[human]` prefix.
+
 ## What this is
 Dog Shop — a shared family shopping list PWA (Progressive Web App). Installs to the home screen on any phone and feels like a native app. Built for the Doggett family: Greg, Beth, and the kids all share one master list. Beth submits the cart to Walmart.
 
