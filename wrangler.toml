@@ -1,0 +1,9 @@
+# Frontend Worker — serves the Dog Shop PWA as Cloudflare Workers Static Assets.
+# Deploys to the existing Worker `dog-shop` → https://dog-shop.gdoggett.workers.dev
+# (Same name = same URL; the family's installed PWA is unaffected.)
+# The API is a SEPARATE Worker defined in worker/wrangler.toml (dog-shop-api).
+name = "dog-shop"
+compatibility_date = "2024-01-01"
+
+[assets]
+directory = "."

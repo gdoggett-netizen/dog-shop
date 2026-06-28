@@ -14,12 +14,13 @@ Dog Shop — a shared family shopping list PWA (Progressive Web App). Installs t
 - `index.html` — the entire PWA frontend (HTML, CSS, JS in one file)
 - `manifest.json` — PWA manifest (icon, name, display mode)
 - `sw.js` — service worker (offline shell caching)
-- `worker/` — Cloudflare Worker API + D1 database
+- `wrangler.toml` + `.assetsignore` — deploy config for the **frontend** Worker (serves only the PWA files as Workers Static Assets; `.assetsignore` keeps `.git`/source out of the public bundle)
+- `worker/` — the **API** Worker (Cloudflare Worker + D1), with its own `worker/wrangler.toml`
 
 ## How it connects
-- Frontend hosted on Cloudflare Pages (auto-deploys on push to main)
-- Backend: Cloudflare Worker at `https://dog-shop-api.gdoggett.workers.dev`
-- Storage: Cloudflare D1 (`dog-shop`)
+- **Frontend** — a Cloudflare **Worker** (Workers Static Assets) at `https://dog-shop.gdoggett.workers.dev`, defined by the root `wrangler.toml`. Serves only `index.html`, `manifest.json`, `sw.js`, and the icons.
+- **Backend (API)** — a *separate* Cloudflare Worker at `https://dog-shop-api.gdoggett.workers.dev` (`worker/`), defined by `worker/wrangler.toml`.
+- **Storage** — Cloudflare D1 (`dog-shop`)
 
 ## API endpoints
 - `GET /api/items` — fetch all items
@@ -29,7 +30,7 @@ Dog Shop — a shared family shopping list PWA (Progressive Web App). Installs t
 
 ## Local development
 ```bash
-cd ~/Desktop/dog-shop
+# from a clean checkout of this repo
 python3 -m http.server 8080
 # Open http://localhost:8080
 
@@ -39,11 +40,17 @@ npx wrangler dev
 ```
 
 ## Deployment
-Frontend — Cloudflare Pages auto-deploys on push to main.
-Worker — manual deploy:
+Two Workers, deployed independently.
+
+**Frontend** (`dog-shop`) — auto-deploys on push to main via `.github/workflows/deploy.yml`
+(requires repo secrets `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`). Manual, from repo root:
 ```bash
-cd ~/Desktop/dog-shop/worker
-npx wrangler deploy
+npx wrangler deploy          # serves the PWA files as Workers Static Assets
+```
+
+**API** (`dog-shop-api`) — manual deploy:
+```bash
+cd worker && npx wrangler deploy
 ```
 
 ## Commit conventions

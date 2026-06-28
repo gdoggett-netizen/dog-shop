@@ -1,0 +1,14 @@
+# Serve ONLY the PWA frontend from this Worker.
+# Everything below is excluded from the public asset bundle — most importantly .git
+# (the prior deploy was publicly serving /.git/, leaking full repo history) and the
+# worker source. The app only needs index.html, manifest.json, sw.js, and the icons.
+.git
+.github
+.claude
+.gitignore
+.assetsignore
+wrangler.toml
+README.md
+CLAUDE.md
+worker
+node_modules
