@@ -40,18 +40,22 @@ npx wrangler dev
 ```
 
 ## Deployment
-Two Workers, deployed independently.
+Two Workers, deployed independently — both **manual** (no CI wired).
 
-**Frontend** (`dog-shop`) — auto-deploys on push to main via `.github/workflows/deploy.yml`
-(requires repo secrets `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`). Manual, from repo root:
+**Frontend** (`dog-shop`) — from repo root:
 ```bash
 npx wrangler deploy          # serves the PWA files as Workers Static Assets
 ```
 
-**API** (`dog-shop-api`) — manual deploy:
+**API** (`dog-shop-api`):
 ```bash
 cd worker && npx wrangler deploy
 ```
+
+*Optional future:* a CI auto-deploy on push can be added (`.github/workflows/deploy.yml`,
+`wrangler deploy` on the frontend) once repo secrets `CLOUDFLARE_API_TOKEN` +
+`CLOUDFLARE_ACCOUNT_ID` are set. Not currently wired — the frontend changes rarely, so
+manual deploy is the standing method.
 
 ## Commit conventions
 Prefix: `[dog-shop]`
