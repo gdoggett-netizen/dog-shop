@@ -15,7 +15,7 @@ Every agent owns one tree. Agents share by writing **briefs**. Git is the perman
 | Work item in dog-shop | dog-shop GitHub issue (+ comments) | meaningless detached from that issue |
 | The work itself | dog-shop pull request | any file change |
 | Cross-tree / another machine / an agent that does not poll this repo | `handoffs/sent/` | recipient is outside this tree |
-| CoS ↔ Muse turns | `the-compound` #379 + `coo-cos-sync/handoffs/` | talking to CoS or Muse as COO/CoS, not filing dog-shop work |
+| CoS ↔ Muse turns | `agent-briefs` `team/sent/` (no notice issue) | talking to CoS or Muse as COO/CoS, not filing dog-shop work |
 
 Do not invent a second sync issue on this repo. The brief file is the post (same as Idea Factory / Venture Factory / pregrade / enlighten-scout).
 
@@ -23,7 +23,7 @@ Do not invent a second sync issue on this repo. The brief file is the post (same
 
 1. Author commits `handoffs/sent/YYYY-MM-DD_<from>-to-<to>_<slug>.md` (no colons in the filename).
 2. Recipient drains `handoffs/sent/` (poller or session-start). Address from `To:`, `to-<id>`, or a direct name — never from “I sent it.”
-3. Recipient copies into **their own** `handoffs/received/` (Muse/CoS: `the-compound/coo-cos-sync/handoffs/received/`) with `Per: dog-shop/handoffs/sent/<file>`.
+3. Recipient copies into **their own** `handoffs/received/` (Muse/CoS: `agent-briefs/team/received/`) with `Per: dog-shop/handoffs/sent/<file>`.
 4. Then they act. Acting commits also carry `Per:`.
 5. Briefs **to this tree** may be archived in this repo’s `handoffs/received/`.
 
@@ -38,7 +38,7 @@ Drain-policy: `flag-and-hold` unless FYI (`auto-archive`). No ack-only replies. 
 Branch + PR by default (this repo’s `CLAUDE.md`). Direct-to-`main` only if Gregory blesses `handoffs/sent/` the same way he blessed Idea Factory `--to-main`.
 
 ## Mirror to CoS (do not dump the body)
-When CoS must route or decide, post a short #379 comment:
+When CoS must route or decide, send CoS a short brief on the team lane (`agent-briefs` `team/sent/`) in this shape:
 
 ```
 ## Mirror — dog-shop
@@ -49,10 +49,10 @@ When CoS must route or decide, post a short #379 comment:
 ```
 
 ## Identities
-`To:` / `From:` resolve only through `the-compound/coo-cos-sync/identity-registry.json`. Do not invent ids.
+`To:` / `From:` resolve only through `agent-briefs/seats.json`. Do not invent ids.
 
 ## DO NOT
-- Collapse all briefing onto #379
+- Collapse all briefing onto the team lane
 - Put other ventures' product code in this tree
 - Create `role:*` labels without Gregory
 - Put secrets (family data, tokens, Cloudflare creds) in briefs, issues, or chat
