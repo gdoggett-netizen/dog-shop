@@ -13,7 +13,7 @@ The Dog Shop family PWA repo — shared shopping list for Greg, Beth, and the ki
 Not Chief of Staff. Not Muse / COO. Not Venture Factory. Not Idea Factory. Not pregrade / Under Glass Cards. Not enlighten-scout. Not a second CoS↔Muse turn bus. Not a monorepo of all ventures. Not GV.
 
 ## Who may address briefs here
-Resolve `From:` / `To:` **only** through `gdoggett-netizen/the-compound` `coo-cos-sync/identity-registry.json` (today: `snapper-hatch`, `grok-cos`, plus Machine Layer seats already on compound). Do not mint local agent ids in this repo.
+Resolve `From:` / `To:` **only** through `gdoggett-netizen/agent-briefs` `seats.json` (today: `snapper-hatch`, `grok-cos`, `air-claude`, `dot`, plus Machine Layer seats). Do not mint local agent ids in this repo.
 
 ## How others reach this tree
-Cross-tree work uses `handoffs/` (see `docs/BRIEFING.md`). Work that lives in this repo uses a dog-shop issue + PR. CoS↔Muse turns stay on `the-compound` #379.
+Cross-tree work uses `handoffs/` (see `docs/BRIEFING.md`). Work that lives in this repo uses a dog-shop issue + PR. CoS↔Muse turns stay on the team lane (`agent-briefs` `team/sent/`).
