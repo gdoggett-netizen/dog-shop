@@ -70,7 +70,7 @@ git push
 When a task is routed to Codex (OpenAI's coding agent):
 
 - **Commit prefix:** `[codex]` — e.g. `[codex] 2026-05-16 — add item sorting`
-- **Open a PR, don't merge** — Greg reviews and merges manually
+- **Open a PR, don't merge** — review and merge follow the vault `CLAUDE.md` merge rule (*Coordinate by brief bus* → **Merges**)
 - **Never run deploy commands** — always manual after Greg reviews the PR
 - **If the task is unclear, say so in the PR description** — don't guess at intent
 - **Don't add new dependencies without flagging them** — list in PR description with a one-line reason
